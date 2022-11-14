@@ -22,4 +22,4 @@ https://www.youtube.com/watch?v=o_OZdbCzHUA
 And was featured in the next video in the series:
 https://www.youtube.com/watch?v=9gBC9R-msAk
 
-## [License MIT © Rohan Verma](https://rhnvrm.mit-license.org/)
+
