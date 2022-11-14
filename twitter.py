@@ -1,5 +1,3 @@
-# author = rhnvrm <hello@rohanverma.net>
-
 import os
 import re
 import tweepy
@@ -13,13 +11,14 @@ class TwitterClient(object):
     '''
     def __init__(self, query, retweets_only=False, with_sentiment=False):
         # keys and tokens from the Twitter Dev Console
-        bearer_token = "AAAAAAAAAAAAAAAAAAAAALuNhAEAAAAAKAa5kwUJ%2B39JNRqHlwJh7MYxNcY%3DmwsyLWQQvB8zIwkS6nNvjxTwDObmHOg8rD6U33YmHWJE6ZaEHC"
-
-        client = tweepy.Client(bearer_token, wait_on_rate_limit=True)
+        consumer_key = os.environ['CONSUMER_KEY']
+        consumer_secret = os.environ['CONSUMER_SECRET']
+        access_token = os.environ['ACCESS_TOKEN']
+        access_token_secret = os.environ['ACCESS_TOKEN_SECRET']
         # Attempt authentication
         try:
-            #self.auth = OAuthHandler(consumer_key, consumer_secret)
-            #self.auth.set_access_token(access_token, access_token_secret)
+            self.auth = OAuthHandler(consumer_key, consumer_secret)
+            self.auth.set_access_token(access_token, access_token_secret)
             self.query = query
             self.retweets_only = retweets_only
             self.with_sentiment = with_sentiment
@@ -53,24 +52,29 @@ class TwitterClient(object):
         tweets = []
 
         try:
-            for response in tweepy.Paginator(client.search_all_tweets, 
-                                 query = self.query,
-                                 user_fields = ['username', 'public_metrics', 'description', 'location'],
-                                 tweet_fields = ['created_at', 'geo', 'public_metrics', 'text'],
-                                 expansions = 'author_id',
-                                 start_time = '2022-08-01T00:00:00Z',
-                                 end_time = '2022-08-15T00:00:00Z',
-                              max_results=500):
-            time.sleep(1)
-            tweets.append(response)
-           
+            recd_tweets = self.api.search(q=self.query,
+                                          count=self.tweet_count_max)
+            if not recd_tweets:
+                pass
+            for tweet in recd_tweets:
+                parsed_tweet = {}
+
+                parsed_tweet['text'] = tweet.text
+                parsed_tweet['user'] = tweet.user.screen_name
+                
+                if self.with_sentiment == 1:
+                    parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.text)
+                else:
+                    parsed_tweet['sentiment'] = 'unavailable'
+
+                if tweet.retweet_count > 0 and self.retweets_only == 1:
+                    if parsed_tweet not in tweets:
+                        tweets.append(parsed_tweet)
+                elif not self.retweets_only:
+                    if parsed_tweet not in tweets:
+                        tweets.append(parsed_tweet)
 
             return tweets
-
-
-
-
-        
 
         except tweepy.TweepError as e:
             print("Error : " + str(e))
